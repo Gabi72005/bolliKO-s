@@ -5,7 +5,7 @@ RDK = robolink.Robolink()
 
 # Obtener elementos clave
 robot = RDK.Item('UR16e', robolink.ITEM_TYPE_ROBOT)
-frame_cinta = RDK.Item('Conveyor Belt (2m) Frame', robolink.ITEM_TYPE_FRAME)
+frame_cinta = RDK.Item('tray_conveyor_frame', robolink.ITEM_TYPE_FRAME)
 conveyor = RDK.Item('Conveyor Belt (2m)', robolink.ITEM_TYPE_ROBOT)
 
 # Validaciones
@@ -22,7 +22,7 @@ robot.MoveJ(home_target)
 
 # 2. Borrar todos los objetos llamados 'Box' o 'Objetivo' en el frame de la cinta
 for obj in frame_cinta.Childs():
-    if obj.Type() == robolink.ITEM_TYPE_OBJECT and obj.Name() in ['Box', 'Objetivo']:
+    if obj.Type() == robolink.ITEM_TYPE_OBJECT and obj.Name() in ['tray','Tray', 'Objetivo']:
         RDK.Delete(obj)
 
 # Eliminar también cajas personalizadas que empiecen por 'Box_pedido'
@@ -58,5 +58,5 @@ for clave, _ in RDK.getParams():
         print(f"🗑️ Eliminando parámetro: {clave}")
         RDK.setParam(clave, "")
 
-
+RDK.setParam("lock_spawn_tray", "0")
 RDK.setParam("stop", 0)
