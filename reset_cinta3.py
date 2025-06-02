@@ -1,31 +1,46 @@
-from robodk import robolink
+from robodk import robolink, robomath
 from robodk.robomath import *
 import time
 
+# Inicializar conexión con RoboDK
 RDK = robolink.Robolink()
 
+# Obtener referencias clave en la estación
+frame_cinta = RDK.Item('Reference Copias Bolsa', robolink.ITEM_TYPE_FRAME)
+frame_mesa = RDK.Item('2UR16e Base', robolink.ITEM_TYPE_FRAME)
+conveyor = RDK.Item('segundaConveyor Belt (2m)', robolink.ITEM_TYPE_ROBOT)
+robot = RDK.Item('2UR16e', robolink.ITEM_TYPE_ROBOT)
 
+# Verificar que todos los elementos necesarios existen
+for item, name in [(frame_cinta, 'frame de la cinta'), (conveyor, 'cinta'), (robot, 'robot 2UR16e')]:
+    if not item.Valid():
+        raise Exception(f"No se encontró el {name}")
 
+# Eliminar objetos tipo 'bolsa' o 'Objetivo' dentro del frame de la cinta
+for obj in frame_cinta.Childs():
+    if obj.Type() == robolink.ITEM_TYPE_OBJECT and obj.Name() in ['bolsa', 'Objetivo']:
+        RDK.Delete(obj)
 
-# 1. Mover la cinta a posición (0,0,0)
-conveyor = RDK.Item('terceraConveyor Belt (2m)', robolink.ITEM_TYPE_ROBOT)
-if conveyor.Valid():
-    conveyor.setJoints([0.0])  # HOME = posición inicial del eje
-    print("🏁 Cinta movida a posición HOME (0.0)")
-else:
-    print("❌ No se encontró la cinta")
-# 2. Eliminar objetos del frame 'colocacion'
+# Resetear la posición de la cinta
+RDK.setParam('POS_CINTA', 0.0)
+
+# Mover el robot al target 'Home2'
+home_target = RDK.Item('Home2', robolink.ITEM_TYPE_TARGET)
+if not home_target.Valid():
+    raise Exception("No se encontró el target 'Home2'")
+robot.MoveJ(home_target)
+
+# Eliminar objetos tipo 'bolsa' o 'Objetivo' que estén sobre la mesa del robot
+for obj in frame_mesa.Childs():
+    if obj.Type() == robolink.ITEM_TYPE_OBJECT and obj.Name() in ['bolsa', 'Objetivo']:
+        RDK.Delete(obj)
+
+# Obtener el frame 'colocacion' y eliminar todos sus objetos
 frame_colocacion = RDK.Item("colocacion", robolink.ITEM_TYPE_FRAME)
 if frame_colocacion.Valid():
-    children = frame_colocacion.Childs()
-    for child in children:
+    for child in frame_colocacion.Childs():
         child.Delete()
-    print(f"🗑️ Objetos eliminados del frame 'colocacion': {len(children)}")
-else:
-    print("❌ No se encontró el frame 'colocacion'.")
 
-# 3. Establecer variables de estación
+# Establecer valores iniciales para las variables de la estación
 RDK.setParam("caja_disponible", "1")
 RDK.setParam("bolsas_en_caja", "0")
-
-print("✅ Variables establecidas y objetos eliminados.")
